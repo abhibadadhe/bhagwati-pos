@@ -1448,26 +1448,29 @@ button:focus-visible, input:focus, select:focus {
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at 10% 20%, rgba(15, 23, 42, 0.96) 0%, rgba(30, 41, 59, 0.98) 90%);
+  background: radial-gradient(circle at 50% 50%, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.99) 100%),
+              radial-gradient(circle at 50% 30%, rgba(234, 88, 12, 0.08) 0%, transparent 50%);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 999999;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 1.5rem;
 }
 
 .login-card {
-  background: rgba(30, 41, 59, 0.5);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 2.5rem 2.25rem;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  animation: loginSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(30, 41, 59, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 2.75rem 2.25rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5),
+              0 0 50px rgba(234, 88, 12, 0.08);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  animation: loginSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .login-brand {
@@ -1476,41 +1479,151 @@ button:focus-visible, input:focus, select:focus {
 }
 
 .login-logo {
-  width: 64px;
-  height: 64px;
-  border-radius: 14px;
-  background: var(--primary-glow);
-  border: 1px solid rgba(234, 88, 12, 0.22);
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: rgba(234, 88, 12, 0.1);
+  border: 1px solid rgba(234, 88, 12, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1.25rem;
+  box-shadow: 0 0 20px rgba(234, 88, 12, 0.15);
 }
 
-.login-brand h2 {
-  font-size: 1.65rem;
+.store-svg-icon {
+  width: 32px;
+  height: 32px;
+  color: #f97316;
+}
+
+.login-title {
+  font-size: 1.8rem;
   font-weight: 800;
   margin-bottom: 0.35rem;
-  color: var(--text-color);
+  color: #ffffff !important;
   letter-spacing: -0.5px;
 }
 
-.login-brand p {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
+.login-subtitle {
+  font-size: 0.88rem;
+  color: #94a3b8 !important;
   font-weight: 500;
   letter-spacing: 0.2px;
 }
 
-.login-card input:focus {
-  border-color: var(--primary-color) !important;
-  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15) !important;
+.login-form {
+  text-align: left;
+}
+
+.form-group-login {
+  margin-bottom: 1.25rem;
+}
+
+.form-group-login label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #cbd5e1;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 0.9rem;
+  width: 18px;
+  height: 18px;
+  color: #64748b;
+  pointer-events: none;
+  transition: color 0.2s;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background-color: rgba(15, 23, 42, 0.4);
+  color: #ffffff !important;
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.input-wrapper input::placeholder {
+  color: #64748b;
+}
+
+.input-wrapper input:focus {
+  border-color: #f97316 !important;
+  background-color: rgba(15, 23, 42, 0.6);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15) !important;
+}
+
+.input-wrapper input:focus + .input-icon,
+.input-wrapper input:focus-within ~ .input-icon {
+  color: #f97316;
+}
+
+.login-error-msg {
+  color: #f87171 !important;
+  background-color: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+  text-align: center;
+  font-weight: 500;
+  animation: loginSlideUp 0.3s ease-out;
+}
+
+.login-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 0.8rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--primary-gradient);
+  border: none;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.2);
+  transition: all 0.2s ease;
+}
+
+.login-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(234, 88, 12, 0.3);
+}
+
+.login-btn:active {
+  transform: translateY(0);
+}
+
+.login-arrow-icon {
+  transition: transform 0.2s ease;
+}
+
+.login-btn:hover .login-arrow-icon {
+  transform: translateX(4px);
 }
 
 @keyframes loginSlideUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(15px);
   }
   to {
     opacity: 1;

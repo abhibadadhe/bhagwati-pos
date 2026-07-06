@@ -109,8 +109,61 @@ const DOM = {
   mobileCartCount: document.getElementById("mobile-cart-count"),
   mobileCartTotal: document.getElementById("mobile-cart-total"),
   btnTriggerMobileCart: document.getElementById("btn-trigger-mobile-cart"),
-  btnCloseCart: document.getElementById("btn-close-cart")
+  btnCloseCart: document.getElementById("btn-close-cart"),
+
+  // Login System elements
+  loginOverlay: document.getElementById("login-overlay"),
+  loginForm: document.getElementById("login-form"),
+  loginUsername: document.getElementById("login-username"),
+  loginPassword: document.getElementById("login-password"),
+  loginErrorMsg: document.getElementById("login-error-msg"),
+  btnLogout: document.getElementById("btn-logout"),
+  btnLogoutMobile: document.getElementById("btn-logout-mobile")
 };
+
+// ==========================================
+// SESSION & AUTHENTICATION MANAGEMENT
+// ==========================================
+let sessionToken = localStorage.getItem("bv_session_token") || "";
+let userRole = localStorage.getItem("bv_user_role") || "";
+let userName = localStorage.getItem("bv_user_name") || "";
+
+async function secureFetch(url, options = {}) {
+  options.headers = options.headers || {};
+  if (sessionToken) {
+    options.headers["Authorization"] = `Bearer ${sessionToken}`;
+  }
+  options.headers["Content-Type"] = options.headers["Content-Type"] || "application/json";
+
+  try {
+    const response = await fetch(url, options);
+    if (response.status === 401) {
+      handleLocalLogout();
+    }
+    return response;
+  } catch (err) {
+    console.error("Secure fetch error:", err);
+    throw err;
+  }
+}
+
+function handleLocalLogout() {
+  sessionToken = "";
+  userRole = "";
+  userName = "";
+  localStorage.removeItem("bv_session_token");
+  localStorage.removeItem("bv_user_role");
+  localStorage.removeItem("bv_user_name");
+
+  // Show login screen
+  if (DOM.loginOverlay) {
+    DOM.loginOverlay.style.display = "flex";
+  }
+  // Clear inputs
+  if (DOM.loginUsername) DOM.loginUsername.value = "";
+  if (DOM.loginPassword) DOM.loginPassword.value = "";
+  if (DOM.loginErrorMsg) DOM.loginErrorMsg.style.display = "none";
+}
 
 // ==========================================
 // BACKEND DATABASE CONTROLLERS
@@ -118,24 +171,24 @@ const DOM = {
 async function loadState() {
   try {
     // 1. Fetch menu items
-    const resMenu = await fetch('/api/menu');
-    if (resMenu.ok) {
+    const resMenu = await secureFetch('/api/menu');
+    if (resMenu && resMenu.ok) {
       menuItems = await resMenu.json();
     } else {
       menuItems = getLocalStorage("bv_menu_items", DEFAULT_MENU_ITEMS);
     }
 
     // 2. Fetch settings
-    const resSettings = await fetch('/api/settings');
-    if (resSettings.ok) {
+    const resSettings = await secureFetch('/api/settings');
+    if (resSettings && resSettings.ok) {
       settings = await resSettings.json();
     } else {
       settings = getLocalStorage("bv_settings", DEFAULT_SETTINGS);
     }
 
     // 3. Fetch sales history
-    const resSales = await fetch('/api/sales');
-    if (resSales.ok) {
+    const resSales = await secureFetch('/api/sales');
+    if (resSales && resSales.ok) {
       salesHistory = await resSales.json();
     } else {
       salesHistory = getLocalStorage("bv_sales_history", []);
@@ -174,14 +227,99 @@ function getLocalStorage(key, defaultVal) {
 // INITIALIZATION
 // ==========================================
 window.addEventListener("DOMContentLoaded", async () => {
-  await loadState();
   initTimeClock();
   initTabNavigation();
   initPOS();
   initMenuEditor();
   initSettings();
   initKeyboardShortcuts();
+  initAuthListeners();
+
+  if (sessionToken) {
+    DOM.loginOverlay.style.display = "none";
+    await loadState();
+    applyRoleRestrictions();
+  } else {
+    DOM.loginOverlay.style.display = "flex";
+  }
 });
+
+function applyRoleRestrictions() {
+  const isCashier = userRole === "cashier";
+
+  // Select all matching navigation buttons (desktop sidebar + mobile bottom navigation)
+  const menuNavItems = Array.from(DOM.navItems).filter(el => el.getAttribute("data-tab") === "menu-tab");
+  const settingsNavItems = Array.from(DOM.navItems).filter(el => el.getAttribute("data-tab") === "settings-tab");
+
+  if (isCashier) {
+    menuNavItems.forEach(el => el.style.display = "none");
+    settingsNavItems.forEach(el => el.style.display = "none");
+
+    // Switch view back to Billing just in case cashier was on hidden tabs
+    switchTab("billing-tab");
+  } else {
+    menuNavItems.forEach(el => el.style.display = "flex");
+    settingsNavItems.forEach(el => el.style.display = "flex");
+  }
+}
+
+function initAuthListeners() {
+  // Login Form Submission
+  DOM.loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    DOM.loginErrorMsg.style.display = "none";
+
+    const username = DOM.loginUsername.value.trim();
+    const password = DOM.loginPassword.value;
+
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        sessionToken = data.token;
+        userRole = data.user.role;
+        userName = data.user.username;
+
+        localStorage.setItem("bv_session_token", sessionToken);
+        localStorage.setItem("bv_user_role", userRole);
+        localStorage.setItem("bv_user_name", userName);
+
+        // Hide overlay & Load state
+        DOM.loginOverlay.style.display = "none";
+        await loadState();
+        applyRoleRestrictions();
+      } else {
+        DOM.loginErrorMsg.textContent = data.error || "Login failed. Please try again.";
+        DOM.loginErrorMsg.style.display = "block";
+      }
+    } catch (err) {
+      DOM.loginErrorMsg.textContent = "Server connection error. Please try again.";
+      DOM.loginErrorMsg.style.display = "block";
+      console.error(err);
+    }
+  });
+
+  // Logout Listeners
+  const logoutAction = async () => {
+    try {
+      await fetch("/api/logout", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${sessionToken}` }
+      });
+    } catch (err) {
+      console.error("Error communicating logout to server:", err);
+    }
+    handleLocalLogout();
+  };
+
+  if (DOM.btnLogout) DOM.btnLogout.addEventListener("click", logoutAction);
+  if (DOM.btnLogoutMobile) DOM.btnLogoutMobile.addEventListener("click", logoutAction);
+}
 
 // ==========================================
 // SYSTEM CLOCK
@@ -528,9 +666,8 @@ async function triggerCheckout() {
   };
 
   try {
-    const response = await fetch('/api/sales', {
+    const response = await secureFetch('/api/sales', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(orderData)
     });
 
@@ -1042,9 +1179,8 @@ function initMenuEditor() {
         if (idx !== -1) {
           menuItems[idx] = { id, name, price, category };
 
-          await fetch(`/api/menu/${id}`, {
+          await secureFetch(`/api/menu/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, price, category })
           });
         }
@@ -1054,9 +1190,8 @@ function initMenuEditor() {
         const newItem = { id: newId, name, price, category };
         menuItems.push(newItem);
 
-        await fetch('/api/menu', {
+        await secureFetch('/api/menu', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newItem)
         });
       }
@@ -1135,7 +1270,7 @@ async function deleteMenuItem(id) {
   if (confirm("Are you sure you want to delete this menu item?")) {
     try {
       menuItems = menuItems.filter(i => i.id !== id);
-      await fetch(`/api/menu/${id}`, { method: 'DELETE' });
+      await secureFetch(`/api/menu/${id}`, { method: 'DELETE' });
       saveState("bv_menu_items", menuItems);
       renderManagerList();
       renderMenuGrid();
@@ -1178,9 +1313,8 @@ function initSettings() {
     settings.receiptFooter = DOM.settingReceiptFooter.value.trim();
 
     try {
-      await fetch('/api/settings', {
+      await secureFetch('/api/settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
       });
 
@@ -1200,7 +1334,7 @@ function initSettings() {
   DOM.btnResetMenu.addEventListener("click", async () => {
     if (confirm("Reset current menu to standard default values? All custom additions will be lost!")) {
       try {
-        await fetch('/api/menu/reset', { method: 'POST' });
+        await secureFetch('/api/menu/reset', { method: 'POST' });
         menuItems = [...DEFAULT_MENU_ITEMS];
         saveState("bv_menu_items", menuItems);
         renderManagerList();
@@ -1216,7 +1350,7 @@ function initSettings() {
   DOM.btnWipeData.addEventListener("click", async () => {
     if (confirm("CRITICAL WARNING: This will permanently wipe all sales history, custom settings, and custom menus. Proceed?")) {
       try {
-        await fetch('/api/reset-all', { method: 'POST' });
+        await secureFetch('/api/reset-all', { method: 'POST' });
         localStorage.clear();
         await loadState();
         cart = [];

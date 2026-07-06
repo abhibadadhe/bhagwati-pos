@@ -3,12 +3,17 @@ const cors = require('cors');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const { Client } = require('pg');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
 app.use(cors());
 app.use(express.json());
+
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
 
 // ==========================================
 // DEFAULT DATA CONFIGURATIONS FOR SEEDING
@@ -156,6 +161,14 @@ async function initializeDatabase() {
           value TEXT NOT NULL
         )
       `);
+
+      await dbRun(`
+        CREATE TABLE IF NOT EXISTS users (
+          username VARCHAR(100) PRIMARY KEY,
+          password_hash VARCHAR(255) NOT NULL,
+          role VARCHAR(50) NOT NULL
+        )
+      `);
     } else {
       // Create tables in SQLite
       await dbRun(`
@@ -212,6 +225,14 @@ async function initializeDatabase() {
           value TEXT NOT NULL
         )
       `);
+
+      await dbRun(`
+        CREATE TABLE IF NOT EXISTS users (
+          username TEXT PRIMARY KEY,
+          password_hash TEXT NOT NULL,
+          role TEXT NOT NULL
+        )
+      `);
     }
 
     console.log("Tables initialized successfully. Checking seed data...");
@@ -235,6 +256,18 @@ async function initializeDatabase() {
         JSON.stringify(DEFAULT_SETTINGS)
       ]);
     }
+
+    // Seed default users if empty
+    const usersCount = await dbQuery("SELECT COUNT(*) as count FROM users");
+    if (usersCount[0].count == 0) {
+      console.log("Seeding default user accounts (admin/cashier)...");
+      await dbRun("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)", [
+        "admin", hashPassword("admin123"), "admin"
+      ]);
+      await dbRun("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)", [
+        "cashier", hashPassword("cashier123"), "cashier"
+      ]);
+    }
     
     console.log("Database verification complete.");
   } catch (err) {
@@ -246,8 +279,82 @@ async function initializeDatabase() {
 // REST API ENDPOINTS
 // ==========================================
 
+const activeSessions = new Map(); // token -> { username, role }
+
+function generateToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: "Access Denied: No token provided" });
+  }
+
+  const session = activeSessions.get(token);
+  if (!session) {
+    return res.status(401).json({ error: "Access Denied: Invalid or expired session" });
+  }
+
+  req.user = session;
+  next();
+}
+
+function requireAdmin(req, res, next) {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ error: "Access Denied: Manager/Admin privileges required" });
+  }
+}
+
+// AUTH API ENDPOINTS
+app.post('/api/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: "Username and password are required" });
+    }
+
+    const rows = await dbQuery("SELECT * FROM users WHERE username = ?", [username.toLowerCase().trim()]);
+    if (rows.length === 0) {
+      return res.status(401).json({ error: "Invalid username or password" });
+    }
+
+    const user = rows[0];
+    const incomingHash = hashPassword(password);
+    if (incomingHash !== user.password_hash) {
+      return res.status(401).json({ error: "Invalid username or password" });
+    }
+
+    const token = generateToken();
+    activeSessions.set(token, { username: user.username, role: user.role });
+
+    res.json({
+      token,
+      user: {
+        username: user.username,
+        role: user.role
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/logout', (req, res) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (token) {
+    activeSessions.delete(token);
+  }
+  res.json({ success: true });
+});
+
 // MENU ENDPOINTS
-app.get('/api/menu', async (req, res) => {
+app.get('/api/menu', authenticateToken, async (req, res) => {
   try {
     const rows = await dbQuery("SELECT * FROM menu_items ORDER BY created_at ASC");
     res.json(rows);
@@ -256,7 +363,7 @@ app.get('/api/menu', async (req, res) => {
   }
 });
 
-app.post('/api/menu', async (req, res) => {
+app.post('/api/menu', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id, name, price, category } = req.body;
     if (!id || !name || price === undefined || !category) {
@@ -271,7 +378,7 @@ app.post('/api/menu', async (req, res) => {
   }
 });
 
-app.put('/api/menu/:id', async (req, res) => {
+app.put('/api/menu/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, price, category } = req.body;
@@ -287,7 +394,7 @@ app.put('/api/menu/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/menu/:id', async (req, res) => {
+app.delete('/api/menu/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     await dbRun("DELETE FROM menu_items WHERE id = ?", [id]);
@@ -298,7 +405,7 @@ app.delete('/api/menu/:id', async (req, res) => {
 });
 
 // SALES ENDPOINTS
-app.get('/api/sales', async (req, res) => {
+app.get('/api/sales', authenticateToken, async (req, res) => {
   try {
     const rows = await dbQuery("SELECT * FROM sales_history ORDER BY timestamp DESC");
     const parsedRows = rows.map(row => ({
@@ -319,7 +426,7 @@ app.get('/api/sales', async (req, res) => {
   }
 });
 
-app.post('/api/sales', async (req, res) => {
+app.post('/api/sales', authenticateToken, async (req, res) => {
   try {
     const { timestamp, customerName, customerPhone, orderType, paymentMode, subtotal, discountAmt, taxAmt, grandTotal, items } = req.body;
     if (!timestamp || !items) {
@@ -359,7 +466,7 @@ app.post('/api/sales', async (req, res) => {
 });
 
 // SETTINGS ENDPOINTS
-app.get('/api/settings', async (req, res) => {
+app.get('/api/settings', authenticateToken, async (req, res) => {
   try {
     const rows = await dbQuery("SELECT value FROM settings WHERE key = 'config'");
     if (rows.length > 0) {
@@ -372,7 +479,7 @@ app.get('/api/settings', async (req, res) => {
   }
 });
 
-app.post('/api/settings', async (req, res) => {
+app.post('/api/settings', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const settingsData = req.body;
     
@@ -388,8 +495,9 @@ app.post('/api/settings', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 // RESET ENDPOINTS
-app.post('/api/menu/reset', async (req, res) => {
+app.post('/api/menu/reset', authenticateToken, requireAdmin, async (req, res) => {
   try {
     await dbRun("DELETE FROM menu_items");
     for (const item of DEFAULT_MENU_ITEMS) {
@@ -403,7 +511,7 @@ app.post('/api/menu/reset', async (req, res) => {
   }
 });
 
-app.post('/api/reset-all', async (req, res) => {
+app.post('/api/reset-all', authenticateToken, requireAdmin, async (req, res) => {
   try {
     await dbRun("DELETE FROM menu_items");
     for (const item of DEFAULT_MENU_ITEMS) {

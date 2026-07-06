@@ -207,6 +207,12 @@ async function loadState() {
 
   // Sync state with UI fields
   syncSettingsToUI();
+
+  // Re-render active views and components with the loaded data
+  renderMenuGrid();
+  renderCart();
+  renderSalesHistory();
+  renderManagerList();
 }
 
 function saveState(key, data) {

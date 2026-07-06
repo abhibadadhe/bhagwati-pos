@@ -237,8 +237,9 @@ button:focus-visible, input:focus, select:focus {
   border: 1px solid rgba(22, 163, 74, 0.2);
 }
 
-.header-time-badge {
-  display: none; /* Hidden on desktop */
+.header-time-badge,
+#btn-logout-mobile {
+  display: none !important; /* Hidden on desktop */
 }
 
 /* Tab display mechanism */
@@ -2106,5 +2107,10 @@ button:focus-visible, input:focus, select:focus {
     font-size: 0.75rem !important;
     border-radius: 6px !important;
     letter-spacing: 0.2px !important;
+  }
+
+  /* Show mobile logout button only on mobile */
+  #btn-logout-mobile {
+    display: flex !important;
   }
 }

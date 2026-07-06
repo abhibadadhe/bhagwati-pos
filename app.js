@@ -939,7 +939,13 @@ function populateMonthFilter() {
   const sortedMonths = Array.from(months).sort().reverse(); // descending order (newest first)
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
+  const today = new Date();
+  const currentYM = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  const lastMonthDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const lastMonthYM = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
+
   sortedMonths.forEach(ym => {
+    if (ym === currentYM || ym === lastMonthYM) return; // Skip as they are already represented by "This Month" and "Last Month"
     const [year, monthStr] = ym.split("-");
     const monthIndex = parseInt(monthStr, 10) - 1;
     const label = `${monthNames[monthIndex]} ${year}`;

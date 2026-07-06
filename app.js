@@ -358,7 +358,7 @@ function renderCart() {
       </div>
     `;
     calculateCartTotals();
-    
+
     // Update mobile summary bar
     DOM.mobileCartCount.textContent = "0";
     DOM.mobileCartTotal.textContent = "₹0.00";
@@ -390,7 +390,7 @@ function renderCart() {
   });
 
   const cartTotals = calculateCartTotals();
-  
+
   // Update mobile summary bar
   let totalQty = 0;
   cart.forEach(ci => totalQty += ci.quantity);
@@ -565,7 +565,7 @@ async function triggerCheckout() {
 function printReceipt(order) {
   // Dynamically inject print page size to prevent empty whitespace/margins on receipt printers
   const paperWidth = settings.paperWidth || "58mm";
-  
+
   // Calculate dynamic receipt height in mm to ensure preview fits content exactly
   const baseHeight = 105; // base height in mm (logo + headers + dividers + totals + footer)
   const itemHeight = paperWidth === "80mm" ? 8 : 9.5; // average height per item row
@@ -745,24 +745,24 @@ function matchesPeriodFilter(timestamp, filterValue) {
   if (isNaN(d.getTime())) return false;
 
   const today = new Date();
-  
+
   if (filterValue === "all") {
     return true;
   }
-  
+
   if (filterValue === "today") {
     return d.toDateString() === today.toDateString();
   }
-  
+
   if (filterValue === "this-month") {
     return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
   }
-  
+
   if (filterValue === "last-month") {
     const lm = new Date(today.getFullYear(), today.getMonth() - 1, 1);
     return d.getFullYear() === lm.getFullYear() && d.getMonth() === lm.getMonth();
   }
-  
+
   // Custom month filter like "2026-07"
   const [yearStr, monthStr] = filterValue.split("-");
   const targetYear = parseInt(yearStr, 10);
@@ -795,12 +795,12 @@ function populateMonthFilter() {
 
   const sortedMonths = Array.from(months).sort().reverse(); // descending order (newest first)
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  
+
   sortedMonths.forEach(ym => {
     const [year, monthStr] = ym.split("-");
     const monthIndex = parseInt(monthStr, 10) - 1;
     const label = `${monthNames[monthIndex]} ${year}`;
-    
+
     const opt = document.createElement("option");
     opt.value = ym;
     opt.textContent = label;
@@ -866,7 +866,7 @@ function renderSalesHistoryList(query = "", typeFilter = "all", monthFilter = hi
     tbody.innerHTML = `
       <tr>
         <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-          No invoices match your search.
+          No invoices are created yet.
         </td>
       </tr>
     `;
@@ -1041,7 +1041,7 @@ function initMenuEditor() {
         const idx = menuItems.findIndex(i => i.id === id);
         if (idx !== -1) {
           menuItems[idx] = { id, name, price, category };
-          
+
           await fetch(`/api/menu/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -1082,16 +1082,16 @@ function renderManagerList() {
   const itemsForManager = [...menuItems].sort((a, b) => {
     const aIsCustom = String(a.id).startsWith("custom-");
     const bIsCustom = String(b.id).startsWith("custom-");
-    
+
     if (aIsCustom && !bIsCustom) return -1;
     if (!aIsCustom && bIsCustom) return 1;
-    
+
     if (aIsCustom && bIsCustom) {
       const aTime = parseInt(a.id.replace("custom-", "")) || 0;
       const bTime = parseInt(b.id.replace("custom-", "")) || 0;
       return bTime - aTime;
     }
-    
+
     return 0;
   });
 

@@ -1,0 +1,18 @@
+{
+  "name": "Bhagwati Vadapav POS",
+  "short_name": "Bhagwati POS",
+  "description": "Professional Billing System for Bhagwati Vadapav",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

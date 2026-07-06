@@ -1,0 +1,17 @@
+{
+  "name": "bhagwati-vadapav-pos",
+  "version": "1.0.0",
+  "description": "Billing and Point of Sale system for Bhagwati Vadapav in Sinnar",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "pg": "^8.12.0",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {}
+}

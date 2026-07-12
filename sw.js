@@ -1,9 +1,9 @@
-const CACHE_NAME = "bhagwati-pos-v29";
+const CACHE_NAME = "bhagwati-pos-v30";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=1.4.8",
-  "./app.js?v=1.4.8",
+  "./style.css?v=1.4.9",
+  "./app.js?v=1.4.9",
   "./logo.png",
   "./manifest.json"
 ];

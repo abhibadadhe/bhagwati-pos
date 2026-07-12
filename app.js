@@ -128,7 +128,8 @@ const DOM = {
   newUsername: document.getElementById("new-username"),
   newPassword: document.getElementById("new-password"),
   newRole: document.getElementById("new-role"),
-  settingsUsersList: document.getElementById("settings-users-list")
+  settingsUsersList: document.getElementById("settings-users-list"),
+  headerUsername: document.getElementById("header-username")
 };
 
 // ==========================================
@@ -262,6 +263,10 @@ window.addEventListener("DOMContentLoaded", async () => {
 
 function applyRoleRestrictions() {
   const isCashier = userRole === "cashier";
+
+  if (DOM.headerUsername) {
+    DOM.headerUsername.textContent = userName || "Guest";
+  }
 
   // Select all matching navigation buttons (desktop sidebar + mobile bottom navigation)
   const menuNavItems = Array.from(DOM.navItems).filter(el => el.getAttribute("data-tab") === "menu-tab");
@@ -530,6 +535,13 @@ function renderCart() {
     DOM.mobileCartTotal.textContent = "₹0.00";
     DOM.mobileCartBar.classList.remove("visible");
     DOM.cartContainer.classList.remove("open");
+
+    // Disable Print Bill button when cart is empty
+    if (DOM.btnCheckout) {
+      DOM.btnCheckout.disabled = true;
+      DOM.btnCheckout.style.opacity = "0.5";
+      DOM.btnCheckout.style.cursor = "not-allowed";
+    }
     return;
   }
 
@@ -563,6 +575,13 @@ function renderCart() {
   DOM.mobileCartCount.textContent = totalQty;
   DOM.mobileCartTotal.textContent = `₹${cartTotals.grandTotal.toFixed(2)}`;
   DOM.mobileCartBar.classList.add("visible");
+
+  // Enable Print Bill button when cart has items
+  if (DOM.btnCheckout) {
+    DOM.btnCheckout.disabled = false;
+    DOM.btnCheckout.style.opacity = "1";
+    DOM.btnCheckout.style.cursor = "pointer";
+  }
 }
 
 function addToCart(productId) {

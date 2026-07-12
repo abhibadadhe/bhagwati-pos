@@ -43,21 +43,32 @@
         <div class="form-group-login">
           <label for="login-username">Username</label>
           <div class="input-wrapper">
-            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
             <input type="text" id="login-username" placeholder="Enter username" required autocomplete="username">
           </div>
         </div>
         <div class="form-group-login">
           <label for="login-password">Password</label>
           <div class="input-wrapper">
-            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-            <input type="password" id="login-password" placeholder="Enter password" required autocomplete="current-password">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <input type="password" id="login-password" placeholder="Enter password" required
+              autocomplete="current-password">
           </div>
         </div>
         <div id="login-error-msg" class="login-error-msg" style="display: none;"></div>
         <button type="submit" id="btn-login-submit" class="btn-primary login-btn">
           Log In Securely
-          <svg class="login-arrow-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          <svg class="login-arrow-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+            style="width: 16px; height: 16px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
         </button>
       </form>
     </div>
@@ -67,7 +78,8 @@
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-logo" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);">
+        <div class="brand-logo"
+          style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);">
           <img src="logo.png" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
         <div class="brand-info">
@@ -114,8 +126,14 @@
       </nav>
 
       <div class="sidebar-footer">
-        <button class="clear-btn" id="btn-logout" style="width: 100%; margin-bottom: 0.75rem; border: 1px solid var(--border-color); color: var(--error-color); padding: 0.4rem; font-size: 0.8rem; justify-content: center; display: flex; align-items: center; gap: 4px; border-radius: 6px;">
-          <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        <button class="clear-btn" id="btn-logout"
+          style="width: 100%; margin-bottom: 0.75rem; border: 1px solid var(--border-color); color: var(--error-color); padding: 0.4rem; font-size: 0.8rem; justify-content: center; display: flex; align-items: center; gap: 4px; border-radius: 6px;">
+          <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"
+            style="width:14px; height:14px;">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
           Logout
         </button>
         <p class="current-time" id="sidebar-time">--:--</p>
@@ -127,15 +145,26 @@
     <main class="main-content">
       <!-- Header -->
       <header class="content-header">
-        <h1 id="page-title">Billing POS</h1>
+        <h1 id="page-title">Billing</h1>
         <div class="header-actions" style="display: flex; gap: 0.5rem; align-items: center;">
           <!-- Logged-in User Badge -->
-          <span id="header-user-badge" class="badge" style="background-color: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: var(--text-primary); font-weight: 500; text-transform: capitalize; display: flex; align-items: center; gap: 6px; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.8rem;">
-            <svg style="width:14px; height:14px; color: var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          <span id="header-user-badge" class="badge"
+            style="background-color: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: var(--text-primary); font-weight: 500; text-transform: capitalize; display: flex; align-items: center; gap: 6px; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.8rem;">
+            <svg style="width:14px; height:14px; color: var(--primary-color);" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
             <span id="header-username">Guest</span>
           </span>
-          <button id="btn-logout-mobile" class="clear-btn" style="border: 1px solid var(--border-color); padding: 0.25rem 0.45rem; color: var(--error-color); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
-            <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <button id="btn-logout-mobile" class="clear-btn"
+            style="border: 1px solid var(--border-color); padding: 0.25rem 0.45rem; color: var(--error-color); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+            <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"
+              style="width:14px; height:14px;">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
           </button>
           <span class="badge header-time-badge" id="header-time">--:--</span>
         </div>
@@ -498,32 +527,37 @@
           <div class="settings-card" id="settings-users-card">
             <h3>Manage User Accounts</h3>
             <div class="user-manager-split" style="display: flex; flex-direction: column; gap: 1.25rem;">
-              
+
               <!-- Form to Add User -->
               <form id="add-user-form" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1.25rem;">
                 <h4 style="margin-bottom: 0.75rem; color: var(--text-primary); font-size: 0.9rem;">Add New User</h4>
                 <div class="form-group" style="margin-bottom: 0.75rem;">
                   <label for="new-username" style="font-size: 0.8rem; margin-bottom: 4px;">Username*</label>
-                  <input type="text" id="new-username" placeholder="e.g. cashier2" required style="padding: 0.4rem; font-size: 0.85rem;">
+                  <input type="text" id="new-username" placeholder="e.g. cashier2" required
+                    style="padding: 0.4rem; font-size: 0.85rem;">
                 </div>
                 <div class="form-group" style="margin-bottom: 0.75rem;">
                   <label for="new-password" style="font-size: 0.8rem; margin-bottom: 4px;">Password*</label>
-                  <input type="password" id="new-password" placeholder="Min 6 characters" required style="padding: 0.4rem; font-size: 0.85rem;">
+                  <input type="password" id="new-password" placeholder="Min 6 characters" required
+                    style="padding: 0.4rem; font-size: 0.85rem;">
                 </div>
                 <div class="form-group" style="margin-bottom: 0.75rem;">
                   <label for="new-role" style="font-size: 0.8rem; margin-bottom: 4px;">Role*</label>
-                  <select id="new-role" required style="padding: 0.4rem; font-size: 0.85rem; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; width: 100%;">
+                  <select id="new-role" required
+                    style="padding: 0.4rem; font-size: 0.85rem; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; width: 100%;">
                     <option value="cashier">Cashier</option>
                     <option value="admin">Manager/Admin</option>
                   </select>
                 </div>
-                <button type="submit" class="btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.85rem; width: 100%;">Create Account</button>
+                <button type="submit" class="btn-primary"
+                  style="padding: 0.45rem 0.9rem; font-size: 0.85rem; width: 100%;">Create Account</button>
               </form>
 
               <!-- Users List -->
               <div>
                 <h4 style="margin-bottom: 0.75rem; color: var(--text-primary); font-size: 0.9rem;">Existing Users</h4>
-                <div id="settings-users-list" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto; padding-right: 4px;">
+                <div id="settings-users-list"
+                  style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto; padding-right: 4px;">
                   <!-- Dynamically populated via JS -->
                 </div>
               </div>

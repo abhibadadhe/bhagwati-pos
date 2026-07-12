@@ -26,7 +26,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1.4.6">
+  <link rel="stylesheet" href="style.css?v=1.4.7">
 </head>
 
 <body>
@@ -366,6 +366,9 @@
                 <option value="Dine-In">Dine-In Only</option>
                 <option value="Takeaway">Parcel Only</option>
               </select>
+              <select id="history-user-filter" class="filter-select" style="display: none;">
+                <option value="all">All Staff/Users</option>
+              </select>
               <input type="text" id="history-search" placeholder="Search Invoice / Phone...">
               <button class="clear-btn" id="btn-export-sales" style="border: 1px solid var(--border-color)">Export
                 CSV</button>
@@ -548,7 +551,7 @@
     <!-- Dynamic receipt content will be written here before window.print() -->
   </div>
 
-  <script src="app.js?v=1.4.6"></script>
+  <script src="app.js?v=1.4.7"></script>
 </body>
 
 </html>

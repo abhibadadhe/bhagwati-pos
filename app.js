@@ -30,6 +30,7 @@ let activeCategory = "all";
 let searchQuery = "";
 let historySearchQuery = "";
 let historyMonthFilterQuery = "all";
+let historyUserFilterQuery = "all";
 
 // ==========================================
 // DOM ELEMENT SELECTORS
@@ -74,6 +75,7 @@ const DOM = {
   historySearch: document.getElementById("history-search"),
   historyTypeFilter: document.getElementById("history-type-filter"),
   historyMonthFilter: document.getElementById("history-month-filter"),
+  historyUserFilter: document.getElementById("history-user-filter"),
   btnExportSales: document.getElementById("btn-export-sales"),
 
   // Menu Tab
@@ -980,44 +982,85 @@ function populateMonthFilter() {
   select.value = historyMonthFilterQuery;
 }
 
+async function populateUserFilter() {
+  const select = DOM.historyUserFilter;
+  if (!select) return;
+
+  if (userRole !== "admin") {
+    select.style.display = "none";
+    return;
+  }
+
+  select.style.display = "inline-block";
+  const currentVal = historyUserFilterQuery || "all";
+
+  try {
+    const res = await secureFetch('/api/users');
+    if (res.ok) {
+      const users = await res.json();
+      select.innerHTML = `<option value="all">All Staff/Users</option>`;
+      users.forEach(u => {
+        const opt = document.createElement("option");
+        opt.value = u.username;
+        opt.textContent = u.username.charAt(0).toUpperCase() + u.username.slice(1);
+        select.appendChild(opt);
+      });
+      select.value = currentVal;
+    }
+  } catch (e) {
+    console.error("Error populating user filter:", e);
+  }
+}
+
 function renderSalesHistory() {
   const tbody = DOM.salesHistoryTbody;
   tbody.innerHTML = "";
 
   populateMonthFilter();
+  populateUserFilter();
 
   // Hook up search filter
   DOM.historySearch.oninput = (e) => {
     historySearchQuery = e.target.value.toLowerCase();
-    renderSalesHistoryList(historySearchQuery, DOM.historyTypeFilter.value, historyMonthFilterQuery);
+    renderSalesHistoryList(historySearchQuery, DOM.historyTypeFilter.value, historyMonthFilterQuery, historyUserFilterQuery);
   };
 
   // Hook up type filter
   DOM.historyTypeFilter.onchange = (e) => {
-    renderSalesHistoryList(historySearchQuery, e.target.value, historyMonthFilterQuery);
+    renderSalesHistoryList(historySearchQuery, e.target.value, historyMonthFilterQuery, historyUserFilterQuery);
   };
 
   // Hook up month filter
   DOM.historyMonthFilter.onchange = (e) => {
     historyMonthFilterQuery = e.target.value;
-    calculateAnalytics(historyMonthFilterQuery);
-    renderSalesHistoryList(historySearchQuery, DOM.historyTypeFilter.value, historyMonthFilterQuery);
+    calculateAnalytics(historyMonthFilterQuery, historyUserFilterQuery);
+    renderSalesHistoryList(historySearchQuery, DOM.historyTypeFilter.value, historyMonthFilterQuery, historyUserFilterQuery);
   };
+
+  // Hook up user filter
+  if (DOM.historyUserFilter) {
+    DOM.historyUserFilter.onchange = (e) => {
+      historyUserFilterQuery = e.target.value;
+      calculateAnalytics(historyMonthFilterQuery, historyUserFilterQuery);
+      renderSalesHistoryList(historySearchQuery, DOM.historyTypeFilter.value, historyMonthFilterQuery, historyUserFilterQuery);
+    };
+  }
 
   // Export button
   DOM.btnExportSales.onclick = exportSalesCSV;
 
-  calculateAnalytics(historyMonthFilterQuery);
-  renderSalesHistoryList(historySearchQuery, DOM.historyTypeFilter.value, historyMonthFilterQuery);
+  calculateAnalytics(historyMonthFilterQuery, historyUserFilterQuery);
+  renderSalesHistoryList(historySearchQuery, DOM.historyTypeFilter.value, historyMonthFilterQuery, historyUserFilterQuery);
 }
 
-function renderSalesHistoryList(query = "", typeFilter = "all", monthFilter = historyMonthFilterQuery) {
+function renderSalesHistoryList(query = "", typeFilter = "all", monthFilter = historyMonthFilterQuery, userFilter = "all") {
   const tbody = DOM.salesHistoryTbody;
   tbody.innerHTML = "";
 
   if (!query && DOM.historySearch) query = DOM.historySearch.value.toLowerCase();
   if (typeFilter === "all" && DOM.historyTypeFilter) typeFilter = DOM.historyTypeFilter.value;
   if (monthFilter === "all" && DOM.historyMonthFilter) monthFilter = DOM.historyMonthFilter.value;
+  if (userFilter === "all" && DOM.historyUserFilter) userFilter = DOM.historyUserFilter.value || "all";
 
   const filteredOrders = salesHistory.filter(order => {
     const matchesInv = order.invoiceNo.toLowerCase().includes(query);
@@ -1027,14 +1070,15 @@ function renderSalesHistoryList(query = "", typeFilter = "all", monthFilter = hi
 
     const matchesType = typeFilter === "all" || order.orderType === typeFilter;
     const matchesDate = matchesPeriodFilter(order.timestamp, monthFilter);
+    const matchesUser = userFilter === "all" || (order.createdBy && order.createdBy.toLowerCase() === userFilter.toLowerCase());
 
-    return matchesSearch && matchesType && matchesDate;
+    return matchesSearch && matchesType && matchesDate && matchesUser;
   });
 
   if (filteredOrders.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
           No invoices are created yet.
         </td>
       </tr>
@@ -1099,7 +1143,7 @@ function renderSalesHistoryList(query = "", typeFilter = "all", monthFilter = hi
   });
 }
 
-function calculateAnalytics(filterValue = historyMonthFilterQuery) {
+function calculateAnalytics(filterValue = historyMonthFilterQuery, userFilter = "all") {
   let periodRevenue = 0;
   let periodOrdersCount = 0;
   let upiTotal = 0;
@@ -1110,8 +1154,13 @@ function calculateAnalytics(filterValue = historyMonthFilterQuery) {
   let parcelRevenue = 0;
   let parcelCount = 0;
 
+  if (userFilter === "all" && DOM.historyUserFilter) userFilter = DOM.historyUserFilter.value || "all";
+
   salesHistory.forEach(order => {
-    if (matchesPeriodFilter(order.timestamp, filterValue)) {
+    const matchesDate = matchesPeriodFilter(order.timestamp, filterValue);
+    const matchesUser = userFilter === "all" || (order.createdBy && order.createdBy.toLowerCase() === userFilter.toLowerCase());
+
+    if (matchesDate && matchesUser) {
       periodRevenue += order.grandTotal;
       periodOrdersCount += 1;
 

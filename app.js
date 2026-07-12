@@ -118,7 +118,15 @@ const DOM = {
   loginPassword: document.getElementById("login-password"),
   loginErrorMsg: document.getElementById("login-error-msg"),
   btnLogout: document.getElementById("btn-logout"),
-  btnLogoutMobile: document.getElementById("btn-logout-mobile")
+  btnLogoutMobile: document.getElementById("btn-logout-mobile"),
+
+  // Admin User Management elements
+  settingsUsersCard: document.getElementById("settings-users-card"),
+  addUserForm: document.getElementById("add-user-form"),
+  newUsername: document.getElementById("new-username"),
+  newPassword: document.getElementById("new-password"),
+  newRole: document.getElementById("new-role"),
+  settingsUsersList: document.getElementById("settings-users-list")
 };
 
 // ==========================================
@@ -263,9 +271,12 @@ function applyRoleRestrictions() {
 
     // Switch view back to Billing just in case cashier was on hidden tabs
     switchTab("billing-tab");
+    if (DOM.settingsUsersCard) DOM.settingsUsersCard.style.display = "none";
   } else {
     menuNavItems.forEach(el => el.style.display = "flex");
     settingsNavItems.forEach(el => el.style.display = "flex");
+    if (DOM.settingsUsersCard) DOM.settingsUsersCard.style.display = "block";
+    renderUsersList();
   }
 }
 
@@ -391,6 +402,8 @@ function initTabNavigation() {
         renderSalesHistory();
       } else if (targetTabId === "menu-tab") {
         renderManagerList();
+      } else if (targetTabId === "settings-tab") {
+        renderUsersList();
       }
     });
   });
@@ -1318,6 +1331,77 @@ function resetMenuForm() {
 // ==========================================
 // SYSTEM SETTINGS PANEL
 // ==========================================
+async function renderUsersList() {
+  if (userRole !== "admin") return;
+  if (!DOM.settingsUsersList) return;
+
+  try {
+    const res = await secureFetch('/api/users');
+    if (!res.ok) {
+      DOM.settingsUsersList.innerHTML = `<div style="color:var(--error-color);font-size:0.8rem;padding:0.5rem 0;">Failed to load user accounts.</div>`;
+      return;
+    }
+    const users = await res.json();
+    
+    DOM.settingsUsersList.innerHTML = "";
+    users.forEach(user => {
+      const item = document.createElement("div");
+      item.className = "user-list-item";
+      item.style.display = "flex";
+      item.style.justifyContent = "space-between";
+      item.style.alignItems = "center";
+      item.style.padding = "0.5rem 0.75rem";
+      item.style.background = "rgba(255, 255, 255, 0.03)";
+      item.style.border = "1px solid var(--border-color)";
+      item.style.borderRadius = "6px";
+      item.style.fontSize = "0.85rem";
+      item.style.marginBottom = "0.4rem";
+
+      const isSelf = user.username.toLowerCase() === userName.toLowerCase();
+      const isPrimaryAdmin = user.username.toLowerCase() === "admin";
+      const canDelete = !isSelf && !isPrimaryAdmin;
+
+      item.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <span style="font-weight:600; color:var(--text-primary); text-transform: capitalize;">${user.username} ${isSelf ? '<span style="font-size:0.75rem; color:var(--primary-color); font-weight:normal;">(You)</span>' : ''}</span>
+          <span style="font-size:0.75rem; color:var(--text-secondary);">${user.role === 'admin' ? 'Manager/Admin' : 'Cashier Staff'}</span>
+        </div>
+        ${canDelete ? `
+          <button class="btn-delete-user" data-username="${user.username}" style="background:none; border:none; color:var(--error-color); cursor:pointer; font-size:0.8rem; padding: 4px; display:flex; align-items:center; opacity:0.85; transition:opacity 0.2s;" title="Delete User">
+            <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          </button>
+        ` : `<span style="font-size:0.75rem; color:var(--text-muted); font-weight:500;">System</span>`}
+      `;
+
+      if (canDelete) {
+        const btn = item.querySelector(".btn-delete-user");
+        btn.addEventListener("mouseenter", () => btn.style.opacity = "1");
+        btn.addEventListener("mouseleave", () => btn.style.opacity = "0.85");
+        btn.addEventListener("click", async () => {
+          if (confirm(`Are you sure you want to delete user account '${user.username}'?`)) {
+            try {
+              const dRes = await secureFetch(`/api/users/${user.username}`, { method: 'DELETE' });
+              if (dRes.ok) {
+                renderUsersList();
+              } else {
+                const errData = await dRes.json();
+                alert(errData.error || "Failed to delete user.");
+              }
+            } catch (err) {
+              console.error(err);
+              alert("Error communicating with server.");
+            }
+          }
+        });
+      }
+
+      DOM.settingsUsersList.appendChild(item);
+    });
+  } catch (err) {
+    console.error("Error loading user list:", err);
+  }
+}
+
 function initSettings() {
   DOM.settingsForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1349,6 +1433,42 @@ function initSettings() {
       console.error(err);
     }
   });
+
+  // Add User Form Submission (Admin Only)
+  if (DOM.addUserForm) {
+    DOM.addUserForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = DOM.newUsername.value.trim();
+      const password = DOM.newPassword.value;
+      const role = DOM.newRole.value;
+
+      if (password.length < 6) {
+        alert("Password must be at least 6 characters long.");
+        return;
+      }
+
+      try {
+        const res = await secureFetch('/api/users', {
+          method: 'POST',
+          body: JSON.stringify({ username, password, role })
+        });
+
+        if (res.ok) {
+          DOM.newUsername.value = "";
+          DOM.newPassword.value = "";
+          DOM.newRole.value = "cashier";
+          renderUsersList();
+          alert(`User '${username}' created successfully!`);
+        } else {
+          const errData = await res.json();
+          alert(errData.error || "Failed to create user.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error saving new user to database.");
+      }
+    });
+  }
 
   DOM.btnResetMenu.addEventListener("click", async () => {
     if (confirm("Reset current menu to standard default values? All custom additions will be lost!")) {

@@ -26,7 +26,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1.4.5">
+  <link rel="stylesheet" href="style.css?v=1.4.6">
 </head>
 
 <body>
@@ -492,6 +492,43 @@
             </form>
           </div>
 
+          <!-- Manage Users Card (Admin Only) -->
+          <div class="settings-card" id="settings-users-card">
+            <h3>Manage User Accounts</h3>
+            <div class="user-manager-split" style="display: flex; flex-direction: column; gap: 1.25rem;">
+              
+              <!-- Form to Add User -->
+              <form id="add-user-form" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1.25rem;">
+                <h4 style="margin-bottom: 0.75rem; color: var(--text-primary); font-size: 0.9rem;">Add New User</h4>
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                  <label for="new-username" style="font-size: 0.8rem; margin-bottom: 4px;">Username*</label>
+                  <input type="text" id="new-username" placeholder="e.g. cashier2" required style="padding: 0.4rem; font-size: 0.85rem;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                  <label for="new-password" style="font-size: 0.8rem; margin-bottom: 4px;">Password*</label>
+                  <input type="password" id="new-password" placeholder="Min 6 characters" required style="padding: 0.4rem; font-size: 0.85rem;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                  <label for="new-role" style="font-size: 0.8rem; margin-bottom: 4px;">Role*</label>
+                  <select id="new-role" required style="padding: 0.4rem; font-size: 0.85rem; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; width: 100%;">
+                    <option value="cashier">Cashier</option>
+                    <option value="admin">Manager/Admin</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.85rem; width: 100%;">Create Account</button>
+              </form>
+
+              <!-- Users List -->
+              <div>
+                <h4 style="margin-bottom: 0.75rem; color: var(--text-primary); font-size: 0.9rem;">Existing Users</h4>
+                <div id="settings-users-list" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto; padding-right: 4px;">
+                  <!-- Dynamically populated via JS -->
+                </div>
+              </div>
+
+            </div>
+          </div>
+
           <div class="settings-card dangerous-zone">
             <h3 class="text-error">Danger Zone</h3>
             <p>Performing these actions will permanently reset or clear configurations. Make sure to download a backup
@@ -511,7 +548,7 @@
     <!-- Dynamic receipt content will be written here before window.print() -->
   </div>
 
-  <script src="app.js?v=1.4.5"></script>
+  <script src="app.js?v=1.4.6"></script>
 </body>
 
 </html>

@@ -141,7 +141,9 @@ async function initializeDatabase() {
       
       await dbRun(`
         CREATE TABLE IF NOT EXISTS sales_history (
-          invoice_no VARCHAR(100) PRIMARY KEY,
+          id VARCHAR(100) PRIMARY KEY,
+          invoice_no VARCHAR(100) NOT NULL,
+          created_by VARCHAR(100) NOT NULL,
           timestamp VARCHAR(100) NOT NULL,
           customer_name VARCHAR(255) NOT NULL,
           customer_phone VARCHAR(100) NOT NULL,
@@ -184,7 +186,8 @@ async function initializeDatabase() {
       await dbRun(`
         CREATE TABLE IF NOT EXISTS sales_history (
           id TEXT PRIMARY KEY,
-          invoice_no TEXT,
+          invoice_no TEXT NOT NULL,
+          created_by TEXT NOT NULL,
           timestamp TEXT NOT NULL,
           customer_name TEXT NOT NULL,
           customer_phone TEXT NOT NULL,
@@ -197,27 +200,6 @@ async function initializeDatabase() {
           items TEXT NOT NULL
         )
       `);
-
-      // SQLite tables structure verification and potential migration for id as primary key
-      await dbRun(`
-        CREATE TABLE IF NOT EXISTS sales_history_v2 (
-          invoice_no TEXT PRIMARY KEY,
-          timestamp TEXT NOT NULL,
-          customer_name TEXT NOT NULL,
-          customer_phone TEXT NOT NULL,
-          order_type TEXT NOT NULL,
-          payment_mode TEXT NOT NULL,
-          subtotal REAL NOT NULL,
-          discount_amt REAL NOT NULL,
-          tax_amt REAL NOT NULL,
-          grand_total REAL NOT NULL,
-          items TEXT NOT NULL
-        )
-      `);
-
-      // We use sales_history_v2 as the final name, but let's drop any old table
-      await dbRun(`DROP TABLE IF EXISTS sales_history`);
-      await dbRun(`ALTER TABLE sales_history_v2 RENAME TO sales_history`).catch(() => {});
 
       await dbRun(`
         CREATE TABLE IF NOT EXISTS settings (
@@ -233,6 +215,108 @@ async function initializeDatabase() {
           role TEXT NOT NULL
         )
       `);
+    }
+
+    // Migration: Migrate sales_history schema if created_by is missing
+    let hasCreatedBy = false;
+    try {
+      if (dbType === 'postgres') {
+        const checkCol = await dbQuery(`
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'sales_history' AND column_name = 'created_by'
+        `);
+        hasCreatedBy = checkCol.length > 0;
+      } else {
+        const tableInfo = await dbQuery("PRAGMA table_info(sales_history)");
+        hasCreatedBy = tableInfo.some(col => col.name === 'created_by');
+      }
+    } catch (e) {
+      console.log("Error checking for created_by column:", e);
+    }
+
+    if (!hasCreatedBy) {
+      // Check if table exists
+      let tableExists = false;
+      try {
+        if (dbType === 'postgres') {
+          const checkTable = await dbQuery(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name = 'sales_history'
+          `);
+          tableExists = checkTable.length > 0;
+        } else {
+          const checkTable = await dbQuery(`
+            SELECT name FROM sqlite_master WHERE type='table' AND name='sales_history'
+          `);
+          tableExists = checkTable.length > 0;
+        }
+      } catch (e) {
+        console.log("Error checking if table exists:", e);
+      }
+
+      if (tableExists) {
+        console.log("Migrating sales_history schema: adding id PK and created_by columns...");
+        
+        // Rename the old table
+        await dbRun("ALTER TABLE sales_history RENAME TO sales_history_old");
+        
+        // Create the new table
+        if (dbType === 'postgres') {
+          await dbRun(`
+            CREATE TABLE sales_history (
+              id VARCHAR(100) PRIMARY KEY,
+              invoice_no VARCHAR(100) NOT NULL,
+              created_by VARCHAR(100) NOT NULL,
+              timestamp VARCHAR(100) NOT NULL,
+              customer_name VARCHAR(255) NOT NULL,
+              customer_phone VARCHAR(100) NOT NULL,
+              order_type VARCHAR(100) NOT NULL,
+              payment_mode VARCHAR(100) NOT NULL,
+              subtotal DOUBLE PRECISION NOT NULL,
+              discount_amt DOUBLE PRECISION NOT NULL,
+              tax_amt DOUBLE PRECISION NOT NULL,
+              grand_total DOUBLE PRECISION NOT NULL,
+              items TEXT NOT NULL
+            )
+          `);
+        } else {
+          await dbRun(`
+            CREATE TABLE sales_history (
+              id TEXT PRIMARY KEY,
+              invoice_no TEXT NOT NULL,
+              created_by TEXT NOT NULL,
+              timestamp TEXT NOT NULL,
+              customer_name TEXT NOT NULL,
+              customer_phone TEXT NOT NULL,
+              order_type TEXT NOT NULL,
+              payment_mode TEXT NOT NULL,
+              subtotal REAL NOT NULL,
+              discount_amt REAL NOT NULL,
+              tax_amt REAL NOT NULL,
+              grand_total REAL NOT NULL,
+              items TEXT NOT NULL
+            )
+          `);
+        }
+        
+        // Copy data over
+        await dbRun(`
+          INSERT INTO sales_history (
+            id, invoice_no, created_by, timestamp, customer_name, customer_phone,
+            order_type, payment_mode, subtotal, discount_amt, tax_amt, grand_total, items
+          )
+          SELECT 
+            invoice_no, invoice_no, 'admin', timestamp, customer_name, customer_phone,
+            order_type, payment_mode, subtotal, discount_amt, tax_amt, grand_total, items
+          FROM sales_history_old
+        `);
+        
+        // Drop the old table
+        await dbRun("DROP TABLE sales_history_old");
+        console.log("sales_history schema migrated successfully.");
+      }
     }
 
     console.log("Tables initialized successfully. Checking seed data...");
@@ -353,6 +437,60 @@ app.post('/api/logout', (req, res) => {
   res.json({ success: true });
 });
 
+// USER MANAGEMENT ENDPOINTS
+app.get('/api/users', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const rows = await dbQuery("SELECT username, role FROM users ORDER BY username ASC");
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/users', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { username, password, role } = req.body;
+    if (!username || !password || !role) {
+      return res.status(400).json({ error: "Missing required user fields" });
+    }
+    const normalizedUsername = username.toLowerCase().trim();
+    
+    // Check if username already exists
+    const checkUser = await dbQuery("SELECT COUNT(*) as count FROM users WHERE username = ?", [normalizedUsername]);
+    if (checkUser[0].count > 0) {
+      return res.status(400).json({ error: "Username already exists" });
+    }
+
+    const passwordHash = hashPassword(password);
+    await dbRun("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)", [
+      normalizedUsername, passwordHash, role
+    ]);
+    res.status(201).json({ success: true, user: { username: normalizedUsername, role } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/users/:username', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { username } = req.params;
+    const normalizedUsername = username.toLowerCase().trim();
+
+    // Protect default admin or current logged-in admin from being deleted
+    if (normalizedUsername === req.user.username.toLowerCase()) {
+      return res.status(400).json({ error: "You cannot delete your own logged-in account" });
+    }
+    if (normalizedUsername === 'admin') {
+      return res.status(400).json({ error: "The primary 'admin' account cannot be deleted" });
+    }
+
+    await dbRun("DELETE FROM users WHERE username = ?", [normalizedUsername]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // MENU ENDPOINTS
 app.get('/api/menu', authenticateToken, async (req, res) => {
   try {
@@ -407,10 +545,16 @@ app.delete('/api/menu/:id', authenticateToken, requireAdmin, async (req, res) =>
 // SALES ENDPOINTS
 app.get('/api/sales', authenticateToken, async (req, res) => {
   try {
-    const rows = await dbQuery("SELECT * FROM sales_history ORDER BY timestamp DESC");
+    let rows;
+    if (req.user.role === 'admin') {
+      rows = await dbQuery("SELECT * FROM sales_history ORDER BY timestamp DESC");
+    } else {
+      rows = await dbQuery("SELECT * FROM sales_history WHERE created_by = ? ORDER BY timestamp DESC", [req.user.username]);
+    }
     const parsedRows = rows.map(row => ({
       ...row,
       invoiceNo: row.invoice_no,
+      createdBy: row.created_by,
       customerName: row.customer_name,
       customerPhone: row.customer_phone,
       orderType: row.order_type,
@@ -454,13 +598,17 @@ app.post('/api/sales', authenticateToken, async (req, res) => {
     const datePrefix = `${year}${month}${day}`;
     const invoiceNo = `${datePrefix}-${String(dailySequence).padStart(3, '0')}`;
 
+    // Generate unique PK transaction ID for concurrency safety
+    const saleId = `sale-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const createdBy = req.user.username;
+
     await dbRun(
       `INSERT INTO sales_history (
-        invoice_no, timestamp, customer_name, customer_phone, order_type, 
+        id, invoice_no, created_by, timestamp, customer_name, customer_phone, order_type, 
         payment_mode, subtotal, discount_amt, tax_amt, grand_total, items
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        invoiceNo, timestamp, customerName || "Walk-in Customer", customerPhone || "N/A", 
+        saleId, invoiceNo, createdBy, timestamp, customerName || "Walk-in Customer", customerPhone || "N/A", 
         orderType || "Takeaway", paymentMode || "Cash", parseFloat(subtotal), 
         parseFloat(discountAmt || 0), parseFloat(taxAmt || 0), parseFloat(grandTotal), 
         JSON.stringify(items)

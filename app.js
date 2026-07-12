@@ -360,6 +360,13 @@ function initTimeClock() {
 // ==========================================
 // TABS NAVIGATION
 // ==========================================
+function switchTab(tabId) {
+  const navItem = Array.from(DOM.navItems).find(item => item.getAttribute("data-tab") === tabId);
+  if (navItem) {
+    navItem.click();
+  }
+}
+
 function initTabNavigation() {
   DOM.navItems.forEach(item => {
     item.addEventListener("click", () => {

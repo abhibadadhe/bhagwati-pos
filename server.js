@@ -445,7 +445,14 @@ app.post('/api/sales', authenticateToken, async (req, res) => {
     );
     
     const dailySequence = parseInt(todayOrders[0].count, 10) + 1;
-    const invoiceNo = String(dailySequence);
+    
+    // Generate globally unique invoice number using date prefix and daily sequence
+    const dateObj = new Date(timestamp);
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const datePrefix = `${year}${month}${day}`;
+    const invoiceNo = `${datePrefix}-${String(dailySequence).padStart(3, '0')}`;
 
     await dbRun(
       `INSERT INTO sales_history (

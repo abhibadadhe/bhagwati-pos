@@ -6,8 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bhagwati Vadapav - Billing System</title>
   <!-- Favicon -->
-  <link rel="icon"
-    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ea580c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M3 9h18M3 9l1.62-4.85A2 2 0 0 1 6.53 3h10.94a2 2 0 0 1 1.91 1.15L21 9M3 9v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9M9 22V12h6v10'></path></svg>">
+  <link rel="icon" type="image/png" href="logo.png">
   <!-- PWA Manifest & Service Worker Registration -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
@@ -26,7 +25,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1.4.9">
+  <link rel="stylesheet" href="style.css?v=1.5.0">
 </head>
 
 <body>
@@ -68,13 +67,8 @@
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-logo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-            stroke-linejoin="round" style="width:26px; height:26px; color: var(--primary-color); display: block;">
-            <path
-              d="M3 9h18M3 9l1.62-4.85A2 2 0 0 1 6.53 3h10.94a2 2 0 0 1 1.91 1.15L21 9M3 9v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9M9 22V12h6v10">
-            </path>
-          </svg>
+        <div class="brand-logo" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);">
+          <img src="logo.png" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
         <div class="brand-info">
           <h2>Bhagwati</h2>
@@ -556,7 +550,7 @@
     <!-- Dynamic receipt content will be written here before window.print() -->
   </div>
 
-  <script src="app.js?v=1.4.9"></script>
+  <script src="app.js?v=1.5.0"></script>
 </body>
 
 </html>

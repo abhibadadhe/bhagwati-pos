@@ -982,7 +982,7 @@ function populateMonthFilter() {
   select.value = historyMonthFilterQuery;
 }
 
-async function populateUserFilter() {
+function populateUserFilter() {
   const select = DOM.historyUserFilter;
   if (!select) return;
 
@@ -994,22 +994,26 @@ async function populateUserFilter() {
   select.style.display = "inline-block";
   const currentVal = historyUserFilterQuery || "all";
 
-  try {
-    const res = await secureFetch('/api/users');
-    if (res.ok) {
-      const users = await res.json();
-      select.innerHTML = `<option value="all">All Staff/Users</option>`;
-      users.forEach(u => {
-        const opt = document.createElement("option");
-        opt.value = u.username;
-        opt.textContent = u.username.charAt(0).toUpperCase() + u.username.slice(1);
-        select.appendChild(opt);
-      });
-      select.value = currentVal;
+  // Extract unique cashier usernames from salesHistory to preserve visibility for deleted users
+  const usernames = new Set();
+  usernames.add("admin");
+  usernames.add("cashier");
+
+  salesHistory.forEach(order => {
+    if (order.createdBy) {
+      usernames.add(order.createdBy.toLowerCase().trim());
     }
-  } catch (e) {
-    console.error("Error populating user filter:", e);
-  }
+  });
+
+  select.innerHTML = `<option value="all">All Staff/Users</option>`;
+  Array.from(usernames).sort().forEach(username => {
+    const opt = document.createElement("option");
+    opt.value = username;
+    opt.textContent = username.charAt(0).toUpperCase() + username.slice(1);
+    select.appendChild(opt);
+  });
+  
+  select.value = currentVal;
 }
 
 function renderSalesHistory() {
